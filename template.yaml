@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Python lambda function for lab purposes.
+Resources:
+  apigateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: alexf-lambda-python
+      StageName: lab
+      EndpointConfiguration: EDGE
+      Auth:
+        ApiKeyRequired: false
+      Domain:
+        DomainName: python-gw.aws.pipsquack.ca
+        CertificateArn: arn:aws:acm:us-west-1:601427279990:certificate/2bf708da-ab6f-4645-aafa-08ac928a0fab
+        Route53:
+          HostedZoneName: aws.pipsquack.ca.
+      Tags:
+        creator: alex.fernandes
+        env: lab
+  lambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: alexf-python
+      Handler: datadog_lambda.handler.handler
+      Runtime: python3.8
+      CodeUri: src/
+      MemorySize: 128
+      Timeout: 10
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref apigateway
+            Path: /hello
+            Method: GET
+      Environment:
+        Variables:
+          DD_LAMBDA_HANDLER: lambda_function.lambda_handler
+          DD_FLUSH_TO_LOG: "true"
+          DD_TRACE_ENABLED: "true"
+      Tags:
+        creator: alex.fernandes
+        env: lab
+        service: lambda-python
+        version: 0.1
+      Layers:
+        - 'arn:aws:lambda:us-west-1:464622532012:layer:Datadog-Python38:35'
